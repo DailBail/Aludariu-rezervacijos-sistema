@@ -1,1 +1,62 @@
-{}
+{
+  "lastRun": "2026-10-27T20:10:07.702Z",
+  "lastChange": null,
+  "portals": [
+    {
+      "portal": "aruodas",
+      "name": "aruodas.lt",
+      "searchPages": 1,
+      "candidates": 0,
+      "matched": 0,
+      "blocked": true,
+      "errors": [
+        "Užblokuota: https://www.aruodas.lt/butai/vilniuje/?FText=Aludari%C5%B3"
+      ]
+    },
+    {
+      "portal": "domoplius",
+      "name": "domoplius.lt",
+      "searchPages": 1,
+      "candidates": 0,
+      "matched": 0,
+      "blocked": true,
+      "errors": [
+        "Užblokuota: https://domoplius.lt/skelbimai/butai?action_type=1&qt=Aludari%C5%B3"
+      ]
+    },
+    {
+      "portal": "skelbiu",
+      "name": "skelbiu.lt",
+      "searchPages": 1,
+      "candidates": 0,
+      "matched": 0,
+      "blocked": true,
+      "errors": [
+        "Užblokuota: https://www.skelbiu.lt/skelbimai/?keywords=Aludari%C5%B3+Vilnius"
+      ]
+    },
+    {
+      "portal": "rinka",
+      "name": "rinka.lt",
+      "searchPages": 2,
+      "candidates": 0,
+      "matched": 0,
+      "blocked": false,
+      "errors": [
+        "HTTP 404: https://www.rinka.lt/paieska?q=Aludari%C5%B3",
+        "HTTP 404: https://www.rinka.lt/paieska?q=Matau+Vilni%C5%B3"
+      ]
+    },
+    {
+      "portal": "kampas",
+      "name": "kampas.lt",
+      "searchPages": 1,
+      "candidates": 0,
+      "matched": 0,
+      "blocked": true,
+      "errors": [
+        "Užblokuota: https://www.kampas.lt/?query=Aludari%C5%B3"
+      ]
+    }
+  ]
+}
