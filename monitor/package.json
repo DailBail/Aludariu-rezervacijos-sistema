@@ -1,0 +1,18 @@
+{
+  "name": "aludariu-listing-monitor",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Collects sale and rent listings for Aludarių g. and the Matau Vilnių project in Vilnius.",
+  "scripts": {
+    "start": "node src/run.js",
+    "test": "node --test test/*.test.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "nodemailer": "10.2.1",
+    "playwright": "1.63.0"
+  }
+}
