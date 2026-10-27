@@ -9,61 +9,15 @@
     ],
     "cityPattern": "vilni"
   },
-  "removeAfterMisses": 3,
-  "maxDetailPagesPerPortal": 120,
-  "delayMs": [1500, 4000],
+  "acceptAllAlerts": false,
+  "mailLookbackDays": 14,
+  "mailbox": "[Gmail]/All Mail",
+  "keepAlerts": 300,
   "portals": [
-    {
-      "id": "aruodas",
-      "name": "aruodas.lt",
-      "listingPattern": "^https://(www\\.)?aruodas\\.lt/\\d-\\d{5,}/?$",
-      "searches": [
-        { "deal": "sale", "kind": "flat", "url": "https://www.aruodas.lt/butai/vilniuje/?FText=Aludari%C5%B3", "pageUrl": "https://www.aruodas.lt/butai/vilniuje/puslapis/{page}/?FText=Aludari%C5%B3", "maxPages": 5 },
-        { "deal": "rent", "kind": "flat", "url": "https://www.aruodas.lt/butu-nuoma/vilniuje/?FText=Aludari%C5%B3", "pageUrl": "https://www.aruodas.lt/butu-nuoma/vilniuje/puslapis/{page}/?FText=Aludari%C5%B3", "maxPages": 5 },
-        { "deal": "sale", "kind": "flat", "url": "https://www.aruodas.lt/butai/vilniuje/?FText=Matau+Vilni%C5%B3" },
-        { "deal": "rent", "kind": "flat", "url": "https://www.aruodas.lt/butu-nuoma/vilniuje/?FText=Matau+Vilni%C5%B3" },
-        { "deal": "sale", "kind": "premises", "url": "https://www.aruodas.lt/patalpos/vilniuje/?FText=Aludari%C5%B3" },
-        { "deal": "rent", "kind": "premises", "url": "https://www.aruodas.lt/patalpu-nuoma/vilniuje/?FText=Aludari%C5%B3" }
-      ]
-    },
-    {
-      "id": "domoplius",
-      "name": "domoplius.lt",
-      "listingPattern": "^https://(www\\.)?domoplius\\.lt/skelbimai/[^?#]+-\\d{5,}\\.html$",
-      "searches": [
-        { "deal": "sale", "kind": "flat", "url": "https://domoplius.lt/skelbimai/butai?action_type=1&qt=Aludari%C5%B3" },
-        { "deal": "rent", "kind": "flat", "url": "https://domoplius.lt/skelbimai/butai?action_type=3&qt=Aludari%C5%B3" },
-        { "deal": "sale", "kind": "flat", "url": "https://domoplius.lt/skelbimai/butai?action_type=1&qt=Matau+Vilni%C5%B3" },
-        { "deal": "rent", "kind": "flat", "url": "https://domoplius.lt/skelbimai/butai?action_type=3&qt=Matau+Vilni%C5%B3" }
-      ]
-    },
-    {
-      "id": "skelbiu",
-      "name": "skelbiu.lt",
-      "listingPattern": "^https://(www\\.|m\\.)?skelbiu\\.lt/skelbimai/[^?#]*\\d{6,}\\.html$",
-      "searches": [
-        { "deal": "auto", "kind": "flat", "url": "https://www.skelbiu.lt/skelbimai/?keywords=Aludari%C5%B3+Vilnius" },
-        { "deal": "auto", "kind": "flat", "url": "https://www.skelbiu.lt/skelbimai/?keywords=Aludari%C5%B3+g." },
-        { "deal": "auto", "kind": "flat", "url": "https://www.skelbiu.lt/skelbimai/?keywords=Matau+Vilni%C5%B3" }
-      ]
-    },
-    {
-      "id": "rinka",
-      "name": "rinka.lt",
-      "listingPattern": "^https://(www\\.)?rinka\\.lt/skelbimas/[^?#]+$",
-      "searches": [
-        { "deal": "auto", "kind": "flat", "url": "https://www.rinka.lt/paieska?q=Aludari%C5%B3" },
-        { "deal": "auto", "kind": "flat", "url": "https://www.rinka.lt/paieska?q=Matau+Vilni%C5%B3" }
-      ]
-    },
-    {
-      "id": "kampas",
-      "name": "kampas.lt",
-      "listingPattern": "^https://(www\\.)?kampas\\.lt/[a-z0-9-]+/[^?#]*\\d{5,}[^?#]*$",
-      "searches": [
-        { "deal": "auto", "kind": "flat", "url": "https://www.kampas.lt/?query=Aludari%C5%B3" },
-        { "deal": "auto", "kind": "flat", "url": "https://www.kampas.lt/?query=Matau+Vilni%C5%B3" }
-      ]
-    }
+    { "id": "aruodas", "name": "aruodas.lt", "domain": "aruodas.lt", "listingPattern": "^https://(www\\.|m\\.)?aruodas\\.lt/\\d-\\d{5,}/?$" },
+    { "id": "domoplius", "name": "domoplius.lt", "domain": "domoplius.lt", "listingPattern": "^https://(www\\.|m\\.)?domoplius\\.lt/skelbimai/[^?#]+-\\d{5,}\\.html$" },
+    { "id": "skelbiu", "name": "skelbiu.lt", "domain": "skelbiu.lt", "listingPattern": "^https://(www\\.|m\\.)?skelbiu\\.lt/skelbimai/[^?#]*\\d{6,}\\.html$" },
+    { "id": "rinka", "name": "rinka.lt", "domain": "rinka.lt", "listingPattern": "^https://(www\\.)?rinka\\.lt/skelbimas/[^?#]+$" },
+    { "id": "kampas", "name": "kampas.lt", "domain": "kampas.lt", "listingPattern": "^https://(www\\.)?kampas\\.lt/[a-z0-9-]+/[^?#]*\\d{5,}[^?#]*$" }
   ]
 }

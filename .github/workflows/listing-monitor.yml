@@ -2,8 +2,8 @@ name: Skelbimų stebėjimas
 
 on:
   schedule:
-    # Kas 2 valandas, 17-ą minutę (UTC).
-    - cron: '17 */2 * * *'
+    # Kas valandą, 17-ą minutę (UTC).
+    - cron: '17 * * * *'
   workflow_dispatch:
 
 permissions:
@@ -16,31 +16,27 @@ concurrency:
 jobs:
   scan:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: monitor
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Įdiegimas
-        run: |
-          npm install --no-audit --no-fund
-          npx playwright install --with-deps chromium
+        run: npm ci --no-audit --no-fund
 
       - name: Testai
         run: npm test
 
-      - name: Portalų patikra
+      - name: Pašto patikra
         env:
-          SMTP_HOST: ${{ secrets.SMTP_HOST }}
-          SMTP_PORT: ${{ secrets.SMTP_PORT }}
-          SMTP_USER: ${{ secrets.SMTP_USER }}
-          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
           ALERT_TO: ${{ secrets.ALERT_TO }}
           SITE_URL: ${{ vars.SITE_URL }}
         run: npm start

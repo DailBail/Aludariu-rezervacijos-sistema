@@ -47,12 +47,17 @@
   .small { font-size: 12px; color: var(--muted); }
   .hist { font-size: 12px; color: var(--muted); }
   .empty { padding: 32px; text-align: center; color: var(--muted); }
+  h2 { font-size: 17px; margin: 32px 0 10px; }
+  .alerts { list-style: none; margin: 0; padding: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+  .alerts li { padding: 10px 12px; border-bottom: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; }
+  .alerts li:last-child { border-bottom: none; }
+  .alerts .count-badge { font-weight: 600; }
 </style>
 </head>
 <body>
 <div class="wrap">
   <h1>Aludarių g. ir „Matau Vilnių“ — skelbimai</h1>
-  <p class="sub">Pardavimo ir nuomos skelbimai iš Lietuvos NT portalų. Puslapis atnaujinamas automatiškai.</p>
+  <p class="sub">Pardavimo ir nuomos skelbimai iš NT portalų el. pašto pranešimų. Puslapis atnaujinamas automatiškai.</p>
   <div class="status" id="status"></div>
   <div class="controls">
     <div class="tabs" role="group" aria-label="Sandorio tipas">
@@ -74,6 +79,9 @@
       <tbody id="rows"></tbody>
     </table>
   </div>
+  <h2>Portalų pranešimai</h2>
+  <p class="small">Kai kurie portalai laiške nurodo tik naujų skelbimų skaičių. Atidarykite nuorodą ir peržiūrėkite skelbimus portale.</p>
+  <ul class="alerts" id="alerts"></ul>
 </div>
 <script>
   const state = { deal: 'all', sort: 'firstSeen', dir: -1, listings: [] };
@@ -117,11 +125,19 @@
   function renderStatus(s) {
     if (!s?.lastRun) { $('status').innerHTML = '<span class="chip">Patikra dar nebuvo vykdyta.</span>'; return; }
     const parts = [`<span class="chip">Paskutinė patikra: ${new Date(s.lastRun).toLocaleString('lt-LT')}</span>`];
-    for (const p of s.portals || []) {
-      const bad = p.blocked || p.errors?.length;
-      parts.push(`<span class="chip ${bad ? 'bad' : ''}" title="${esc((p.errors || []).join('\n'))}">${esc(p.name)}: ${p.blocked ? 'užblokuota' : 'rasta ' + p.matched}${!p.blocked && p.errors?.length ? ' (įspėjimai)' : ''}</span>`);
-    }
+    if (s.lastChange) parts.push(`<span class="chip">Paskutinis pokytis: ${new Date(s.lastChange).toLocaleString('lt-LT')}</span>`);
+    if (s.error) parts.push(`<span class="chip bad">Klaida: ${esc(s.error)}</span>`);
     $('status').innerHTML = parts.join('');
+  }
+
+  function renderAlerts(list) {
+    const rel = list.filter((a) => a.relevant);
+    $('alerts').innerHTML = rel.length
+      ? rel.map((a) => `<li><span class="small">${new Date(a.date).toLocaleString('lt-LT')}</span>
+          <span>${esc(a.portal)}</span><span>${esc(a.search || a.subject)}</span>
+          ${a.count ? `<span class="count-badge">naujų: ${a.count}</span>` : ''}
+          ${a.url ? `<a href="${esc(a.url)}" target="_blank" rel="noopener">Atidaryti portale</a>` : ''}</li>`).join('')
+      : '<li class="empty">Pranešimų dar nėra.</li>';
   }
 
   document.querySelectorAll('.tabs button').forEach((b) => b.addEventListener('click', () => {
@@ -140,7 +156,9 @@
   Promise.all([
     fetch('data/listings.json' + bust).then((r) => (r.ok ? r.json() : { listings: [] })).catch(() => ({ listings: [] })),
     fetch('data/status.json' + bust).then((r) => (r.ok ? r.json() : null)).catch(() => null),
-  ]).then(([data, status]) => {
+    fetch('data/alerts.json' + bust).then((r) => (r.ok ? r.json() : { alerts: [] })).catch(() => ({ alerts: [] })),
+  ]).then(([data, status, alertData]) => {
+    renderAlerts(alertData.alerts || []);
     state.listings = data.listings || [];
     const portals = [...new Set(state.listings.map((l) => l.portal))].sort();
     $('portal').insertAdjacentHTML('beforeend', portals.map((p) => `<option>${esc(p)}</option>`).join(''));

@@ -43,17 +43,6 @@ export function upsert(store, fresh, now) {
   return events;
 }
 
-export function registerMiss(store, id, limit) {
-  const l = store.get(id);
-  if (!l || !l.active) return [];
-  l.missCount = (l.missCount ?? 0) + 1;
-  if (l.missCount >= limit) {
-    l.active = false;
-    return [{ type: 'removed', listing: l }];
-  }
-  return [];
-}
-
 // Strips run-specific fields so that a comparison shows only real changes.
 export function stableView(listings) {
   return JSON.stringify(listings.map(({ lastSeen, ...rest }) => rest));
