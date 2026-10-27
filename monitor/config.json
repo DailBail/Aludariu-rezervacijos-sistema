@@ -5,7 +5,7 @@
       { "pattern": "matau vilniu", "label": "Matau Vilnių" }
     ],
     "possible": [
-      { "pattern": "pakalnes g", "label": "Pakalnės g. (possibly Matau Vilnių)" }
+      { "pattern": "pakalnes g", "label": "Pakalnės g. (galbūt Matau Vilnių)" }
     ],
     "cityPattern": "vilni"
   },

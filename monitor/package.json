@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Collects sale and rent listings for Aludarių g. and the Matau Vilnių project in Vilnius.",
+  "description": "Renka Aludarių g. ir projekto „Matau Vilnių“ (Vilnius) pardavimo ir nuomos skelbimus.",
   "scripts": {
     "start": "node src/run.js",
     "test": "node --test test/*.test.js"

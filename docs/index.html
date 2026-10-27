@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="lt">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Aludarių Listings Monitor</title>
+<title>Aludarių skelbimų stebėjimas</title>
 <style>
   :root {
     --bg: #f7f7f5; --surface: #ffffff; --text: #1d1d1b; --muted: #6b6b66; --border: #e3e2dd;
@@ -51,25 +51,25 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>Aludarių g. &amp; Matau Vilnių — listings</h1>
-  <p class="sub">Sale and rent offers collected from Lithuanian property portals. The monitor updates this page automatically.</p>
+  <h1>Aludarių g. ir „Matau Vilnių“ — skelbimai</h1>
+  <p class="sub">Pardavimo ir nuomos skelbimai iš Lietuvos NT portalų. Puslapis atnaujinamas automatiškai.</p>
   <div class="status" id="status"></div>
   <div class="controls">
-    <div class="tabs" role="group" aria-label="Deal type">
-      <button data-deal="all" aria-pressed="true">All</button><button data-deal="sale" aria-pressed="false">Sale</button><button data-deal="rent" aria-pressed="false">Rent</button>
+    <div class="tabs" role="group" aria-label="Sandorio tipas">
+      <button data-deal="all" aria-pressed="true">Visi</button><button data-deal="sale" aria-pressed="false">Pardavimas</button><button data-deal="rent" aria-pressed="false">Nuoma</button>
     </div>
-    <select id="portal" aria-label="Portal"><option value="">All portals</option></select>
-    <select id="state" aria-label="State">
-      <option value="active">Active only</option><option value="all">Active and removed</option><option value="removed">Removed only</option>
+    <select id="portal" aria-label="Portalas"><option value="">Visi portalai</option></select>
+    <select id="state" aria-label="Būsena">
+      <option value="active">Tik aktyvūs</option><option value="all">Aktyvūs ir pašalinti</option><option value="removed">Tik pašalinti</option>
     </select>
-    <input type="search" id="q" placeholder="Search title or address">
+    <input type="search" id="q" placeholder="Ieškoti pagal pavadinimą ar adresą">
     <span class="count" id="count"></span>
   </div>
   <div class="tablewrap">
     <table>
       <thead><tr>
-        <th data-k="deal">Deal</th><th data-k="title">Listing</th><th data-k="price">Price</th><th data-k="pricePerM2">€/m²</th>
-        <th data-k="area">Area</th><th data-k="rooms">Rooms</th><th data-k="floor">Floor</th><th data-k="portal">Portal</th><th data-k="firstSeen">First seen</th>
+        <th data-k="deal">Sandoris</th><th data-k="title">Skelbimas</th><th data-k="price">Kaina</th><th data-k="pricePerM2">€/m²</th>
+        <th data-k="area">Plotas</th><th data-k="rooms">Kamb.</th><th data-k="floor">Aukštas</th><th data-k="portal">Portalas</th><th data-k="firstSeen">Rastas</th>
       </tr></thead>
       <tbody id="rows"></tbody>
     </table>
@@ -97,29 +97,29 @@
         if (y == null) return -1;
         return (x > y ? 1 : x < y ? -1 : 0) * state.dir;
       });
-    $('count').textContent = `${rows.length} listing(s)`;
+    $('count').textContent = `Skelbimų: ${rows.length}`;
     $('rows').innerHTML = rows.length
       ? rows.map((l) => {
           const hist = (l.priceHistory || []).length > 1
-            ? `<div class="hist">History: ${l.priceHistory.map((h) => `${date(h.date)} ${eur(h.price)}`).join(' → ')}</div>` : '';
-          const match = l.match?.confidence === 'possible' ? `<div class="small">Possible match: ${esc(l.match.reasons.join(', '))}</div>` : '';
+            ? `<div class="hist">Kainų istorija: ${l.priceHistory.map((h) => `${date(h.date)} ${eur(h.price)}`).join(' → ')}</div>` : '';
+          const match = l.match?.confidence === 'possible' ? `<div class="small">Galimas atitikmuo: ${esc(l.match.reasons.join(', '))}</div>` : '';
           return `<tr class="${l.active ? '' : 'inactive'}">
-            <td class="deal-${esc(l.deal)}">${l.deal === 'rent' ? 'Rent' : 'Sale'}${l.active ? '' : '<div class="small">removed</div>'}</td>
+            <td class="deal-${esc(l.deal)}">${l.deal === 'rent' ? 'Nuoma' : 'Pardavimas'}${l.active ? '' : '<div class="small">pašalintas</div>'}</td>
             <td><a href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.title || l.url)}</a>
               <div class="small">${esc(l.address || '')}</div>${match}${hist}</td>
             <td class="num">${eur(l.price)}</td><td class="num">${l.pricePerM2 ?? '—'}</td>
             <td class="num">${l.area ? l.area + ' m²' : '—'}</td><td class="num">${l.rooms ?? '—'}</td><td class="num">${esc(l.floor ?? '—')}</td>
             <td>${esc(l.portal)}</td><td class="num">${date(l.firstSeen)}</td></tr>`;
         }).join('')
-      : '<tr><td colspan="9" class="empty">No listings match the filters.</td></tr>';
+      : '<tr><td colspan="9" class="empty">Pagal filtrus skelbimų nėra.</td></tr>';
   }
 
   function renderStatus(s) {
-    if (!s?.lastRun) { $('status').innerHTML = '<span class="chip">The monitor did not run yet.</span>'; return; }
-    const parts = [`<span class="chip">Last check: ${new Date(s.lastRun).toLocaleString('lt-LT')}</span>`];
+    if (!s?.lastRun) { $('status').innerHTML = '<span class="chip">Patikra dar nebuvo vykdyta.</span>'; return; }
+    const parts = [`<span class="chip">Paskutinė patikra: ${new Date(s.lastRun).toLocaleString('lt-LT')}</span>`];
     for (const p of s.portals || []) {
       const bad = p.blocked || p.errors?.length;
-      parts.push(`<span class="chip ${bad ? 'bad' : ''}" title="${esc((p.errors || []).join('\n'))}">${esc(p.name)}: ${p.blocked ? 'blocked' : p.matched + ' found'}${!p.blocked && p.errors?.length ? ' (warnings)' : ''}</span>`);
+      parts.push(`<span class="chip ${bad ? 'bad' : ''}" title="${esc((p.errors || []).join('\n'))}">${esc(p.name)}: ${p.blocked ? 'užblokuota' : 'rasta ' + p.matched}${!p.blocked && p.errors?.length ? ' (įspėjimai)' : ''}</span>`);
     }
     $('status').innerHTML = parts.join('');
   }

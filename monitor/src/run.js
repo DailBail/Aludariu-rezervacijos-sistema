@@ -72,11 +72,11 @@ async function collectCandidates(page, portal, pattern, report) {
       report.searchPages++;
       if (res.blocked) {
         report.blocked = true;
-        report.errors.push(`Blocked at ${url}`);
+        report.errors.push(`Užblokuota: ${url}`);
         return found;
       }
       if (res.error || res.status >= 400) {
-        report.errors.push(`${res.error || 'HTTP ' + res.status} at ${url}`);
+        report.errors.push(`${res.error || 'HTTP ' + res.status}: ${url}`);
         break;
       }
       let added = 0;
@@ -85,6 +85,12 @@ async function collectCandidates(page, portal, pattern, report) {
         if (!pattern.test(u) || found.has(u)) continue;
         found.set(u, { deal: search.deal, kind: search.kind });
         added++;
+      }
+      if (!added && n === 1) {
+        // Diagnostika: rodo, kokias nuorodas puslapis turi, kad būtų galima pataisyti listingPattern.
+        report.errors.push(`Nerasta skelbimų nuorodų: ${url} (antraštė: ${res.title.slice(0, 80)})`);
+        const sample = [...new Set(res.links.map(cleanUrl))].filter((u) => /\d{5,}/.test(u)).slice(0, 10);
+        console.log(`  Nuorodų pavyzdžiai (${res.links.length} iš viso):\n    ${sample.join('\n    ') || '—'}`);
       }
       if (!added) break;
     }
@@ -110,7 +116,7 @@ async function processPortal(context, portal, store, now) {
     let visits = 0;
     for (const [url, meta] of queue) {
       if (visits++ >= config.maxDetailPagesPerPortal) {
-        report.errors.push(`Stopped after ${config.maxDetailPagesPerPortal} detail pages`);
+        report.errors.push(`Sustabdyta po ${config.maxDetailPagesPerPortal} skelbimų puslapių`);
         break;
       }
       const id = listingId(portal.id, url);
@@ -119,11 +125,11 @@ async function processPortal(context, portal, store, now) {
       const res = await load(page, url);
       if (res.blocked) {
         report.blocked = true;
-        report.errors.push(`Blocked at ${url}`);
+        report.errors.push(`Užblokuota: ${url}`);
         break;
       }
       if (res.error) {
-        report.errors.push(`${res.error} at ${url}`);
+        report.errors.push(`${res.error}: ${url}`);
         continue; // A network error is not proof that the listing is gone.
       }
       const gone =
@@ -168,7 +174,7 @@ async function main() {
   const reports = [];
   const events = [];
   for (const portal of portals) {
-    console.log(`Checking ${portal.name}...`);
+    console.log(`Tikrinamas ${portal.name}...`);
     const r = await processPortal(context, portal, store, now);
     console.log(JSON.stringify(r.report));
     reports.push(r.report);
@@ -187,11 +193,11 @@ async function main() {
     writeJson(statusFile, { lastRun: now, lastChange: changed ? now : prevStatus.lastChange ?? null, portals: reports });
   }
 
-  console.log(`${events.length} event(s): ${events.map((e) => `${e.type} ${e.listing.id}`).join(', ') || 'none'}`);
+  console.log(`Įvykių: ${events.length}. ${events.map((e) => `${e.type} ${e.listing.id}`).join(', ')}`);
   await sendAlert(events, process.env.SITE_URL);
 
   if (reports.length && reports.every((r) => r.blocked || r.searchPages === 0)) {
-    console.error('All portals failed. Examine the log.');
+    console.error('Nė vienas portalas neveikė. Patikrinkite žurnalą.');
     process.exitCode = 1;
   }
 }

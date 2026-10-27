@@ -1,8 +1,8 @@
-name: Listing monitor
+name: Skelbimų stebėjimas
 
 on:
   schedule:
-    # Every 2 hours, at minute 17 (UTC).
+    # Kas 2 valandas, 17-ą minutę (UTC).
     - cron: '17 */2 * * *'
   workflow_dispatch:
 
@@ -27,15 +27,15 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install
+      - name: Įdiegimas
         run: |
           npm install --no-audit --no-fund
           npx playwright install --with-deps chromium
 
-      - name: Unit tests
+      - name: Testai
         run: npm test
 
-      - name: Scan portals
+      - name: Portalų patikra
         env:
           SMTP_HOST: ${{ secrets.SMTP_HOST }}
           SMTP_PORT: ${{ secrets.SMTP_PORT }}
@@ -45,7 +45,7 @@ jobs:
           SITE_URL: ${{ vars.SITE_URL }}
         run: npm start
 
-      - name: Save results
+      - name: Rezultatų išsaugojimas
         if: always()
         working-directory: .
         run: |
@@ -53,9 +53,9 @@ jobs:
           git config user.email "listing-monitor@users.noreply.github.com"
           git add docs/data
           if git diff --cached --quiet; then
-            echo "No changes."
+            echo "Pakeitimų nėra."
           else
-            git commit -m "Update listings $(date -u +%Y-%m-%dT%H:%MZ)"
+            git commit -m "Atnaujinti skelbimai $(date -u +%Y-%m-%dT%H:%MZ)"
             git pull --rebase origin "${GITHUB_REF_NAME}"
             git push origin "HEAD:${GITHUB_REF_NAME}"
           fi
