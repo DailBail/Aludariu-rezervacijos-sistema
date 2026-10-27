@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="lt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aludarių skelbimų stebėjimas</title>
+<style>
+  :root {
+    --bg: #f7f7f5; --surface: #ffffff; --text: #1d1d1b; --muted: #6b6b66; --border: #e3e2dd;
+    --accent: #1f5fbf; --sale: #2f7d4f; --rent: #8a5a00; --bad: #b3261e; --chip: #efeee9;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #151514; --surface: #1e1e1c; --text: #ecebe6; --muted: #a09f99; --border: #33332f;
+      --accent: #7aa7ff; --sale: #6fcf97; --rent: #f2c46d; --bad: #ff8a80; --chip: #2a2a27;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #151514; --surface: #1e1e1c; --text: #ecebe6; --muted: #a09f99; --border: #33332f;
+    --accent: #7aa7ff; --sale: #6fcf97; --rent: #f2c46d; --bad: #ff8a80; --chip: #2a2a27;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.45 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 20px; }
+  .status { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  .chip { background: var(--chip); border-radius: 999px; padding: 3px 10px; font-size: 13px; }
+  .chip.bad { color: var(--bad); }
+  .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 14px; }
+  select, input[type=search] { background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; font: inherit; }
+  input[type=search] { flex: 1 1 200px; }
+  .tabs button { background: none; border: 1px solid var(--border); color: var(--text); padding: 6px 12px; font: inherit; cursor: pointer; }
+  .tabs button:first-child { border-radius: 6px 0 0 6px; }
+  .tabs button:last-child { border-radius: 0 6px 6px 0; }
+  .tabs button[aria-pressed=true] { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .count { color: var(--muted); font-size: 13px; }
+  .tablewrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+  table { border-collapse: collapse; width: 100%; min-width: 860px; }
+  th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { font-size: 12px; text-transform: uppercase; letter-spacing: .03em; color: var(--muted); cursor: pointer; user-select: none; white-space: nowrap; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  tr.inactive td { opacity: .5; }
+  a { color: var(--accent); }
+  .deal-sale { color: var(--sale); font-weight: 600; }
+  .deal-rent { color: var(--rent); font-weight: 600; }
+  .small { font-size: 12px; color: var(--muted); }
+  .hist { font-size: 12px; color: var(--muted); }
+  .empty { padding: 32px; text-align: center; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Aludarių g. ir „Matau Vilnių“ — skelbimai</h1>
+  <p class="sub">Pardavimo ir nuomos skelbimai iš Lietuvos NT portalų. Puslapis atnaujinamas automatiškai.</p>
+  <div class="status" id="status"></div>
+  <div class="controls">
+    <div class="tabs" role="group" aria-label="Sandorio tipas">
+      <button data-deal="all" aria-pressed="true">Visi</button><button data-deal="sale" aria-pressed="false">Pardavimas</button><button data-deal="rent" aria-pressed="false">Nuoma</button>
+    </div>
+    <select id="portal" aria-label="Portalas"><option value="">Visi portalai</option></select>
+    <select id="state" aria-label="Būsena">
+      <option value="active">Tik aktyvūs</option><option value="all">Aktyvūs ir pašalinti</option><option value="removed">Tik pašalinti</option>
+    </select>
+    <input type="search" id="q" placeholder="Ieškoti pagal pavadinimą ar adresą">
+    <span class="count" id="count"></span>
+  </div>
+  <div class="tablewrap">
+    <table>
+      <thead><tr>
+        <th data-k="deal">Sandoris</th><th data-k="title">Skelbimas</th><th data-k="price">Kaina</th><th data-k="pricePerM2">€/m²</th>
+        <th data-k="area">Plotas</th><th data-k="rooms">Kamb.</th><th data-k="floor">Aukštas</th><th data-k="portal">Portalas</th><th data-k="firstSeen">Rastas</th>
+      </tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+</div>
+<script>
+  const state = { deal: 'all', sort: 'firstSeen', dir: -1, listings: [] };
+  const $ = (id) => document.getElementById(id);
+  const eur = (n) => (n == null ? '—' : n.toLocaleString('lt-LT') + ' €');
+  const date = (s) => (s ? new Date(s).toLocaleDateString('lt-LT') : '—');
+  const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+
+  function render() {
+    const q = $('q').value.trim().toLowerCase();
+    const portal = $('portal').value;
+    const st = $('state').value;
+    const rows = state.listings
+      .filter((l) => state.deal === 'all' || l.deal === state.deal)
+      .filter((l) => !portal || l.portal === portal)
+      .filter((l) => (st === 'all' ? true : st === 'active' ? l.active : !l.active))
+      .filter((l) => !q || `${l.title} ${l.address}`.toLowerCase().includes(q))
+      .sort((a, b) => {
+        const x = a[state.sort], y = b[state.sort];
+        if (x == null) return 1;
+        if (y == null) return -1;
+        return (x > y ? 1 : x < y ? -1 : 0) * state.dir;
+      });
+    $('count').textContent = `Skelbimų: ${rows.length}`;
+    $('rows').innerHTML = rows.length
+      ? rows.map((l) => {
+          const hist = (l.priceHistory || []).length > 1
+            ? `<div class="hist">Kainų istorija: ${l.priceHistory.map((h) => `${date(h.date)} ${eur(h.price)}`).join(' → ')}</div>` : '';
+          const match = l.match?.confidence === 'possible' ? `<div class="small">Galimas atitikmuo: ${esc(l.match.reasons.join(', '))}</div>` : '';
+          return `<tr class="${l.active ? '' : 'inactive'}">
+            <td class="deal-${esc(l.deal)}">${l.deal === 'rent' ? 'Nuoma' : 'Pardavimas'}${l.active ? '' : '<div class="small">pašalintas</div>'}</td>
+            <td><a href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.title || l.url)}</a>
+              <div class="small">${esc(l.address || '')}</div>${match}${hist}</td>
+            <td class="num">${eur(l.price)}</td><td class="num">${l.pricePerM2 ?? '—'}</td>
+            <td class="num">${l.area ? l.area + ' m²' : '—'}</td><td class="num">${l.rooms ?? '—'}</td><td class="num">${esc(l.floor ?? '—')}</td>
+            <td>${esc(l.portal)}</td><td class="num">${date(l.firstSeen)}</td></tr>`;
+        }).join('')
+      : '<tr><td colspan="9" class="empty">Pagal filtrus skelbimų nėra.</td></tr>';
+  }
+
+  function renderStatus(s) {
+    if (!s?.lastRun) { $('status').innerHTML = '<span class="chip">Patikra dar nebuvo vykdyta.</span>'; return; }
+    const parts = [`<span class="chip">Paskutinė patikra: ${new Date(s.lastRun).toLocaleString('lt-LT')}</span>`];
+    for (const p of s.portals || []) {
+      const bad = p.blocked || p.errors?.length;
+      parts.push(`<span class="chip ${bad ? 'bad' : ''}" title="${esc((p.errors || []).join('\n'))}">${esc(p.name)}: ${p.blocked ? 'užblokuota' : 'rasta ' + p.matched}${!p.blocked && p.errors?.length ? ' (įspėjimai)' : ''}</span>`);
+    }
+    $('status').innerHTML = parts.join('');
+  }
+
+  document.querySelectorAll('.tabs button').forEach((b) => b.addEventListener('click', () => {
+    state.deal = b.dataset.deal;
+    document.querySelectorAll('.tabs button').forEach((x) => x.setAttribute('aria-pressed', x === b));
+    render();
+  }));
+  document.querySelectorAll('th[data-k]').forEach((th) => th.addEventListener('click', () => {
+    state.dir = state.sort === th.dataset.k ? -state.dir : 1;
+    state.sort = th.dataset.k;
+    render();
+  }));
+  ['q', 'portal', 'state'].forEach((id) => $(id).addEventListener('input', render));
+
+  const bust = `?t=${Date.now()}`;
+  Promise.all([
+    fetch('data/listings.json' + bust).then((r) => (r.ok ? r.json() : { listings: [] })).catch(() => ({ listings: [] })),
+    fetch('data/status.json' + bust).then((r) => (r.ok ? r.json() : null)).catch(() => null),
+  ]).then(([data, status]) => {
+    state.listings = data.listings || [];
+    const portals = [...new Set(state.listings.map((l) => l.portal))].sort();
+    $('portal').insertAdjacentHTML('beforeend', portals.map((p) => `<option>${esc(p)}</option>`).join(''));
+    renderStatus(status);
+    render();
+  });
+</script>
+</body>
+</html>

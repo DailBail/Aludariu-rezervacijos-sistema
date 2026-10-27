@@ -1,0 +1,61 @@
+name: Skelbimų stebėjimas
+
+on:
+  schedule:
+    # Kas 2 valandas, 17-ą minutę (UTC).
+    - cron: '17 */2 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: listing-monitor
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    defaults:
+      run:
+        working-directory: monitor
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Įdiegimas
+        run: |
+          npm install --no-audit --no-fund
+          npx playwright install --with-deps chromium
+
+      - name: Testai
+        run: npm test
+
+      - name: Portalų patikra
+        env:
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          ALERT_TO: ${{ secrets.ALERT_TO }}
+          SITE_URL: ${{ vars.SITE_URL }}
+        run: npm start
+
+      - name: Rezultatų išsaugojimas
+        if: always()
+        working-directory: .
+        run: |
+          git config user.name "listing-monitor[bot]"
+          git config user.email "listing-monitor@users.noreply.github.com"
+          git add docs/data
+          if git diff --cached --quiet; then
+            echo "Pakeitimų nėra."
+          else
+            git commit -m "Atnaujinti skelbimai $(date -u +%Y-%m-%dT%H:%MZ)"
+            git pull --rebase origin "${GITHUB_REF_NAME}"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
