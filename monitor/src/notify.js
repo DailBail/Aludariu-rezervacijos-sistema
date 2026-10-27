@@ -16,7 +16,9 @@ function line(e) {
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
 export async function sendAlert(events, siteUrl) {
-  const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, ALERT_TO } = process.env;
+  const { SMTP_HOST, SMTP_PORT, ALERT_TO } = process.env;
+  const SMTP_USER = process.env.SMTP_USER || process.env.GMAIL_USER;
+  const SMTP_PASS = process.env.SMTP_PASS || process.env.GMAIL_APP_PASSWORD;
   if (!events.length) return;
   if (!SMTP_USER || !SMTP_PASS || !ALERT_TO) {
     console.log(`El. paštas nenustatytas. Neišsiųsta įvykių: ${events.length}.`);

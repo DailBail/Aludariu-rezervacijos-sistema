@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Renka Aludarių g. ir projekto „Matau Vilnių“ (Vilnius) pardavimo ir nuomos skelbimus.",
+  "description": "Renka Aludarių g. ir projekto „Matau Vilnių“ skelbimus iš NT portalų el. pašto pranešimų.",
   "scripts": {
     "start": "node src/run.js",
     "test": "node --test test/*.test.js"
@@ -12,7 +12,9 @@
     "node": ">=20"
   },
   "dependencies": {
-    "nodemailer": "10.2.1",
-    "playwright": "1.63.0"
+    "imapflow": "2.9.1",
+    "mailparser": "3.12.4",
+    "node-html-parser": "9.0.5",
+    "nodemailer": "10.2.1"
   }
 }

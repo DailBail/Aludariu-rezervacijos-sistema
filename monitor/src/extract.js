@@ -1,5 +1,5 @@
-// Pure functions that read listing data from page text. No network or browser access here,
-// so the tests can run without the portals.
+// Pure functions that read listing data from text. No network access here,
+// so the tests can run without a mailbox.
 
 export function normalize(s) {
   return String(s ?? '')
@@ -32,7 +32,7 @@ function toNumber(raw) {
 const NUM = String.raw`(\d{1,3}(?:[   .,]\d{3})+(?:[.,]\d{1,2})?|\d+(?:[.,]\d{1,2})?)`;
 
 export function parsePrice(text) {
-  const re = new RegExp(NUM + String.raw`\s*(?:€|eur\b)`, 'gi');
+  const re = new RegExp(NUM + String.raw`\s*(?:€|eur\b)(?!\s*\/\s*(?:m²|m2|kv))`, 'gi');
   for (const m of String(text ?? '').matchAll(re)) {
     const n = toNumber(m[1]);
     if (n !== null && n >= 50) return Math.round(n);
@@ -58,8 +58,11 @@ export function parseRooms(text) {
 
 export function parseFloor(text) {
   const t = normalize(text);
-  let m = t.match(/aukstas:?\s*(\d{1,2})(?:\s*(?:\/|is)\s*(\d{1,2}))?/);
-  if (!m) m = t.match(/(\d{1,2})\s*(?:\/|is)\s*(\d{1,2})\s*(?:aukst|a\.)/);
+  // "1/5 aukštas", then "Aukštas: 3", then "3 aukštas". The label needs a colon,
+  // else the number of the next line (for example the price) can be read as the floor.
+  let m = t.match(/\b(\d{1,2})\s*(?:\/|is)\s*(\d{1,2})\s*(?:aukst|a\.)/);
+  if (!m) m = t.match(/aukstas:\s*(\d{1,2})\b(?:\s*(?:\/|is)\s*(\d{1,2})\b)?/);
+  if (!m) m = t.match(/\b(\d{1,2})\s*aukst/);
   if (!m) return null;
   return m[2] ? `${m[1]}/${m[2]}` : m[1];
 }
@@ -69,37 +72,12 @@ export function parseAddress(text) {
   return m ? m[0].trim() : null;
 }
 
-export function detectDeal(searchDeal, title, text, price) {
-  if (searchDeal === 'sale' || searchDeal === 'rent') return searchDeal;
-  const t = normalize(title);
-  if (/nuom|isnuomoj/.test(t)) return 'rent';
+export function detectDeal(context, price) {
+  const t = normalize(context);
+  if (/nuom|isnuomoj|€\s*\/\s*men|eur\s*\/\s*men|per menesi/.test(t)) return 'rent';
   if (/parduod|pardavim/.test(t)) return 'sale';
-  const body = normalize(text).slice(0, 3000);
-  if (/€\s*\/\s*men|eur\s*\/\s*men|per menesi/.test(body)) return 'rent';
   if (price !== null && price < 5000) return 'rent';
   return 'sale';
-}
-
-// Pages that show these phrases no longer offer the listing.
-const REMOVED_MARKERS = [
-  'skelbimas nebegalioja',
-  'skelbimas pasalintas',
-  'skelbimas neaktyvus',
-  'skelbimas nerastas',
-  'puslapis nerastas',
-  'nebeaktualus',
-];
-
-export function looksRemoved(text) {
-  const t = normalize(text).slice(0, 5000);
-  return REMOVED_MARKERS.some((m) => t.includes(m));
-}
-
-const BLOCK_MARKERS = ['just a moment', 'attention required', 'verify you are human', 'captcha', 'access denied'];
-
-export function looksBlocked(title, text) {
-  const t = normalize(`${title} ${String(text ?? '').slice(0, 1500)}`);
-  return BLOCK_MARKERS.some((m) => t.includes(m));
 }
 
 export function listingId(portalId, url) {
@@ -107,38 +85,23 @@ export function listingId(portalId, url) {
   return `${portalId}:${m ? m[1] : url}`;
 }
 
-// page: { url, title, h1, description, ogImage, text, jsonLd: [] }
-export function extractListing(page, { portalId, searchDeal, kind, keywords }) {
-  const head = [page.title, page.h1, page.description].filter(Boolean).join(' \n ');
-  const match = matchKeywords(`${head}\n${page.text}`, keywords);
-  if (!match) return null;
-
-  let price = null;
-  for (const d of page.jsonLd ?? []) {
-    const offer = Array.isArray(d?.offers) ? d.offers[0] : d?.offers;
-    if (offer?.price) {
-      price = toNumber(String(offer.price));
-      break;
-    }
-  }
-  price ??= parsePrice(head) ?? parsePrice(page.text);
-  const area = parseArea(head) ?? parseArea(page.text);
-  const deal = detectDeal(searchDeal, head, page.text, price);
-
+// block: the text of one listing inside an alert email. context: the alert subject and search name.
+export function extractListing({ url, title, block, image }, { portalId, context, match }) {
+  const price = parsePrice(block);
+  const area = parseArea(block);
   return {
-    id: listingId(portalId, page.url),
+    id: listingId(portalId, url),
     portal: portalId,
-    url: page.url,
-    deal,
-    kind,
-    title: (page.h1 || page.title || '').trim().slice(0, 200),
+    url,
+    deal: detectDeal(`${title} ${block} ${context}`, price),
+    title: String(title || block.split('\n')[0] || '').trim().slice(0, 200),
     price,
     area,
     pricePerM2: price && area ? Math.round(price / area) : null,
-    rooms: parseRooms(head) ?? parseRooms(page.text),
-    floor: parseFloor(page.text),
-    address: parseAddress(head) ?? parseAddress(page.text),
-    image: page.ogImage || null,
+    rooms: parseRooms(`${title} ${block}`),
+    floor: parseFloor(block),
+    address: parseAddress(`${title} ${block}`),
+    image: image || null,
     match,
   };
 }
